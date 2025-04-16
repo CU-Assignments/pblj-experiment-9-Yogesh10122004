@@ -1,0 +1,151 @@
+HibernateCRUD/
+│
+├── hibernate.cfg.xml
+├── Student.java
+├── StudentDao.java
+└── Main.java
+<?xml version='1.0' encoding='utf-8'?>
+<!DOCTYPE hibernate-configuration PUBLIC
+        "-//Hibernate/Hibernate Configuration DTD//EN"
+        "http://hibernate.sourceforge.net/hibernate-configuration-3.0.dtd">
+
+<hibernate-configuration>
+    <session-factory>
+        <!-- Database connection settings -->
+        <property name="connection.driver_class">com.mysql.cj.jdbc.Driver</property>
+        <property name="connection.url">jdbc:mysql://localhost:3306/your_database_name</property>
+        <property name="connection.username">your_username</property>
+        <property name="connection.password">your_password</property>
+
+        <!-- JDBC connection pool -->
+        <property name="connection.pool_size">1</property>
+
+        <!-- SQL dialect -->
+        <property name="dialect">org.hibernate.dialect.MySQL8Dialect</property>
+
+        <!-- Enable Hibernate's automatic session context management -->
+        <property name="current_session_context_class">thread</property>
+
+        <!-- Echo all executed SQL to stdout -->
+        <property name="show_sql">true</property>
+
+        <!-- Drop and re-create the database schema on startup -->
+        <property name="hbm2ddl.auto">update</property>
+
+        <!-- Mapping class -->
+        <mapping class="Student"/>
+    </session-factory>
+</hibernate-configuration>
+import jakarta.persistence.*;
+
+@Entity
+@Table(name = "students")
+public class Student {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private int id;
+
+    private String name;
+    private int age;
+
+    // Constructors
+    public Student() {}
+
+    public Student(String name, int age) {
+        this.name = name;
+        this.age = age;
+    }
+
+    // Getters and Setters
+    public int getId() { return id; }
+    public String getName() { return name; }
+    public void setName(String name) { this.name = name; }
+    public int getAge() { return age; }
+    public void setAge(int age) { this.age = age; }
+}
+import org.hibernate.Session;
+import org.hibernate.SessionFactory;
+import org.hibernate.cfg.Configuration;
+
+public class StudentDao {
+
+    private static SessionFactory factory;
+
+    static {
+        factory = new Configuration().configure().buildSessionFactory();
+    }
+
+    public void createStudent(Student student) {
+        Session session = factory.openSession();
+        session.beginTransaction();
+        session.save(student);
+        session.getTransaction().commit();
+        session.close();
+    }
+
+    public Student readStudent(int id) {
+        Session session = factory.openSession();
+        Student student = session.get(Student.class, id);
+        session.close();
+        return student;
+    }
+
+    public void updateStudent(Student student) {
+        Session session = factory.openSession();
+        session.beginTransaction();
+        session.update(student);
+        session.getTransaction().commit();
+        session.close();
+    }
+
+    public void deleteStudent(int id) {
+        Session session = factory.openSession();
+        Student student = session.get(Student.class, id);
+        if (student != null) {
+            session.beginTransaction();
+            session.delete(student);
+            session.getTransaction().commit();
+        }
+        session.close();
+    }
+}
+public class Main {
+    public static void main(String[] args) {
+        StudentDao dao = new StudentDao();
+
+        // Create
+        Student s1 = new Student("John", 20);
+        dao.createStudent(s1);
+
+        // Read
+        Student s2 = dao.readStudent(s1.getId());
+        System.out.println("Read: " + s2.getName() + ", Age: " + s2.getAge());
+
+        // Update
+        s2.setAge(22);
+        dao.updateStudent(s2);
+        System.out.println("Updated Age to 22");
+
+        // Delete
+        dao.deleteStudent(s2.getId());
+        System.out.println("Deleted student with ID: " + s2.getId());
+    }
+}
+<dependencies>
+    <dependency>
+        <groupId>org.hibernate.orm</groupId>
+        <artifactId>hibernate-core</artifactId>
+        <version>6.2.7.Final</version>
+    </dependency>
+    <dependency>
+        <groupId>jakarta.persistence</groupId>
+        <artifactId>jakarta.persistence-api</artifactId>
+        <version>3.1.0</version>
+    </dependency>
+    <dependency>
+        <groupId>mysql</groupId>
+        <artifactId>mysql-connector-java</artifactId>
+        <version>8.0.33</version>
+    </dependency>
+</dependencies>
